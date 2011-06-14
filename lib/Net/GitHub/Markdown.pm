@@ -12,15 +12,17 @@ sub new {
     return bless {}, shift;
 }
 
-
 sub markdown {
     my ( $self, $content ) = @_;
-    my $html_document = $self->create_gist( $content );
-    return $self->html_from_gist( $html_document );
+    return $self->html_from_gist(
+        $self->create_gist($content)
+    );
 }
 
 sub mech {
-    $mech ||= WWW::Mechanize->new( 
+    return $mech if $mech;
+
+    $mech = WWW::Mechanize->new( 
         user_agent => 'WWW::GitHub::Markdown/0.01',
         timeout    => 60,
         cookie_jar => {},
@@ -47,14 +49,14 @@ sub create_gist {
         $self->mech->post( "https://gist.github.com/delete/$id", 
             {
                 '_method' => 'delete',
-                'authenticity_token' => $self->_get_auth_token($content);
+                'authenticity_token' => $self->_get_auth_token($content),
             }
         );
         my $status = $self->mech->status;
         warn "Expected 200, but got $status while deleting the gist." 
             unless $status == 200;
     } else {
-        warn "Expected an ID, but couldn't find one.  Please report this.";
+        warn "Expected an ID, but couldn't find one. Please report this.";
     }
 
     return $content;
@@ -63,13 +65,9 @@ sub create_gist {
 sub html_from_gist {
     my ( $self, $html ) = @_;
     my $root = HTML::TreeBuilder->new_from_content( $html );
-    my ($content) = $root->look_down(
-        sub {
-            $_[0]->tag and $_[0]->tag eq 'div' and
-            $_[0]->attr('id') and $_[0]->attr( 'id' ) eq 'readme'
-        }
-    );
-    return $content->as_HTML;
+    my $content = $root->look_down( _tag => 'div', "id" => "readme" )->as_HTML;
+    $root->delete;
+    return $content;
 }
 
 # Deleting gists is ugly and NOT cheap.  This is
@@ -80,14 +78,9 @@ sub html_from_gist {
 sub _get_auth_token {
     my ( $self, $html ) = @_;
     my $root = HTML::TreeBuilder->new_from_content($html);
-    my ($content) = $root->look_down(
-        sub {
-            $_[0]->tag and $_[0]->tag eq 'div' and
-            $_[0]->attr('id') and $_[0]->attr('id') eq 'delete_link'
-        }
-    );
+    my $content = $root->look_down( _tag => 'div', 'id' => 'delete_link' )->as_HTML;
 
-    if ( $content->as_HTML =~ /([a-f0-9]{40})/ ) {
+    if ( $content =~ /([a-f0-9]{40})/ ) {
         return $1;
     }
     warn "Deleting Gists is not functioning correctly. Please report this.";
