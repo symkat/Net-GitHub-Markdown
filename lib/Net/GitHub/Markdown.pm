@@ -19,7 +19,7 @@ sub markdown {
     );
     $html =~ s/^<div class="blob instapaper_body" id="readme">//;
     $html =~ s/<\/div>$//;
-    $html =~ s/^<div class="wikistyle">/<div id="markdown">/;
+    $html =~ s/^ <div class="wikistyle">/<div id="markdown">/;
     return $html;
 }
 
@@ -69,7 +69,7 @@ sub create_gist {
 sub html_from_gist {
     my ( $self, $html ) = @_;
     my $root = HTML::TreeBuilder->new_from_content( $html );
-    my $content = $root->look_down( _tag => 'div', "id" => "readme" )->as_HTML;
+    my $content = $root->look_down( _tag => 'div', "id" => "readme" )->as_HTML(undef, ' ', {});
     $root->delete;
     return $content;
 }
