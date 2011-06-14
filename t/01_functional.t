@@ -7,7 +7,7 @@ use Net::GitHub::Markdown;
 my $tests = [
     {
         put => "# Hello World",
-        get => '<div class="blob instapaper_body" id="readme"><div class="wikistyle"><h1>Hello World</h1></div></div>',
+        get => '<div id="markdown"><h1>Hello World</h1></div>',
         say => "Basic Functionality Works.",
     },
 

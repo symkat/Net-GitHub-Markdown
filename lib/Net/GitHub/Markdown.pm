@@ -14,9 +14,13 @@ sub new {
 
 sub markdown {
     my ( $self, $content ) = @_;
-    return $self->html_from_gist(
+    my $html = $self->html_from_gist(
         $self->create_gist($content)
     );
+    $html =~ s/^<div class="blob instapaper_body" id="readme">//;
+    $html =~ s/<\/div>$//;
+    $html =~ s/^<div class="wikistyle">/<div id="markdown">/;
+    return $html;
 }
 
 sub mech {
